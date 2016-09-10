@@ -588,41 +588,18 @@ class AnyFoodSearchProblem(PositionSearchProblem):
 ##################
 
 class ApproximateSearchAgent(Agent):
-    def registerInitialState(self, state):
+    def registerInitialState(self, gameState):
         self.actions = []
-        currentState = state
-        while(currentState.getFood().count() > 0):
-            nextPathSegment = self.findPathToClosestDot(currentState) # The missing piece
-            self.actions += nextPathSegment
-            for action in nextPathSegment:
-                legal = currentState.getLegalActions()
-                if action not in legal:
-                    t = (str(action), str(currentState))
-                    raise Exception, 'findPathToClosestDot returned an illegal move: %s!\n%s' % t
-                currentState = currentState.generateSuccessor(0, action)
+
+        walls = gameState.getWalls()
+        problem = MyFoodSearchProblem(gameState)
+
+        self.actions= search.uniformCostSearch(problem)
         self.actionIndex = 0
+
         print 'Path found with cost %d.' % len(self.actions)
 
-    def findPathToClosestDot(self, gameState):
-        "Returns a path (a list of actions) to the closest dot, starting from gameState"
-        # Here are some useful elements of the startState
-        startPosition = gameState.getPacmanPosition()
-        food = gameState.getFood()
-        walls = gameState.getWalls()
-        problem = AnyFoodSearchProblem(gameState)
-
-        foods=food.asList()
-        problem.goal=food.asList()
-        return search.aStarSearch(problem)
-
     def getAction(self, state):
-        """
-        Returns the next action in the path chosen earlier (in registerInitialState).  Return
-        Directions.STOP if there is no further action to take.
-
-        state: a GameState object (pacman.py)
-        """
-        if 'actionIndex' not in dir(self): self.actionIndex = 0
         i = self.actionIndex
         self.actionIndex += 1
         if i < len(self.actions):
@@ -631,37 +608,19 @@ class ApproximateSearchAgent(Agent):
             return Directions.STOP
 
 class MyFoodSearchProblem(PositionSearchProblem):
-
     def __init__(self, gameState):
-        "Stores information from the gameState.  You don't need to change this."
-        # Store the food for later reference
-        self.food = gameState.getFood()
-
-        # Store info for the PositionSearchProblem (no need to change this)
         self.walls = gameState.getWalls()
+        self.foods=gameState.getFood().asList()
         self.startState = gameState.getPacmanPosition()
         self.costFn = lambda x: 1
-        self._visited, self._visitedlist, self._expanded = {}, [], 0
 
     def isGoalState(self, state):
-        x,y = state
-
-        if state in self.goal:
+        if state in self.foods
             return True
         else:
             return False
+
     def getSuccessors(self, state):
-        """
-        Returns successor states, the actions they require, and a cost of 1.
-
-         As noted in search.py:
-             For a given state, this should return a list of triples,
-         (successor, action, stepCost), where 'successor' is a
-         successor to the current state, 'action' is the action
-         required to get there, and 'stepCost' is the incremental
-         cost of expanding to that successor
-        """
-
         successors = []
         for action in [Directions.SOUTH, Directions.NORTH, Directions.WEST,Directions.EAST ]:
             x,y = state
@@ -671,6 +630,7 @@ class MyFoodSearchProblem(PositionSearchProblem):
                 nextState = (nextx, nexty)
                 cost = self.costFn(nextState)
                 successors.append( ( nextState, action, cost) )
+        return successors
 
 def mazeDistance(point1, point2, gameState):
     """
