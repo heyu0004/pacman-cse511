@@ -136,10 +136,11 @@ def uniformCostSearch(problem):
         state,actions=fringe.pop()
         if problem.isGoalState(state):
             return actions
+
         if state not in visited:
+            visited.add(state)
             for newState,action,cost in problem.getSuccessors(state):
                 if newState not in visited:
-                    visited.add(newState)
                     fringe.push((newState,actions+[action]),
                             cost+problem.getCostOfActions(actions))
     return None

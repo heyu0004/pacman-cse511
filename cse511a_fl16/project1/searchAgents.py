@@ -389,9 +389,9 @@ def cornersHeuristic(state, problem):
     distances=[0]
     for i in range(4):
         if not foods[i]:
-            distances+=[max((corners[i][0]-pos[0])**2+
-                    (corners[i][1]-pos[1])**2,(corners[i][0]-pos[0])+
-                    (corners[i][1]-pos[1]))]
+            distances+=[max(((corners[i][0]-pos[0])**2+
+                    (corners[i][1]-pos[1])**2)**0.5,abs(corners[i][0]-pos[0])+
+                    abs(corners[i][1]-pos[1]))]
 
     return max(distances)
 
@@ -591,12 +591,17 @@ class ApproximateSearchAgent(Agent):
     def registerInitialState(self, state):
         self.actions=[]
         self.walls=state.getWalls
+        self.food=state.getFood()
+        self.actionIndex=0
+        return
+        sys.exit()
         actionsList=[]
         problem= MyFoodSearchProblem(state)
 
         actionsList=self.myBFS(problem)
+        print 'Path found with cost %d.' % len(self.actions)
 
-    def myBFS(problem)
+    def myBFS(problem):
         visited=set()
         stack=util.Queue()
         actionsList=[]
@@ -607,7 +612,7 @@ class ApproximateSearchAgent(Agent):
 
             for newState,action,cost in problem.getSuccessors(state):
                 if newState[0] not in visited:
-                    "if not way to go, record this path
+                    #if not way to go, record this path
                     if problem.isGoalState(newState):
                         return actions+[action]
                     stack.push((newState,actions+[action]))
@@ -616,20 +621,25 @@ class ApproximateSearchAgent(Agent):
         return None
 
     def getAction(self, state):
-        return self.actions
+        if 'actionIndex' not in dir(self): self.actionIndex = 0
+        i = self.actionIndex
+        self.actionIndex += 1
+        if i < len(self.actions):
+            return self.actions[i]
+        else:
+            return Directions.STOP
 
-class AnyFoodSearchProblem(PositionSearchProblem):
+class MyFoodSearchProblem(PositionSearchProblem):
     def __init__(self, gameState):
-        foods = gameState.getFood().toList()
+        self.foods = gameState.getFood().toList()
 
         # Store info for the PositionSearchProblem (no need to change this)
         self.walls = gameState.getWalls()
-        self.startState = (gameState.getPacmanPosition(),foods)
+        self.startState = gameState.getPacmanPosition()
         self._visited, self._visitedlist, self._expanded = {}, [], 0
 
     def isGoalState(self, state):
-        x,y = state
-        if state in self.goal:
+        if not self.foods:
             return True
         else:
             return False
