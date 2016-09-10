@@ -91,11 +91,12 @@ def depthFirstSearch(problem):
 
     while not stack.isEmpty():
         state,actions=stack.pop()
-        if problem.isGoalState(state):
-            return actions
-        visited.add(state)
+
         for newState,action,cost in problem.getSuccessors(state):
             if newState not in visited:
+                if problem.isGoalState(newState):
+                    return actions+[action]
+                visited.add(newState)
                 stack.push((newState,actions+[action]))
 
     return None
@@ -113,12 +114,13 @@ def breadthFirstSearch(problem):
 
     while not stack.isEmpty():
         state,actions=stack.pop()
-        if problem.isGoalState(state):
-            return actions
-        visited.add(state)
+
         for newState,action,cost in problem.getSuccessors(state):
             if newState not in visited:
+                if problem.isGoalState(newState):
+                    return actions+[action]
                 stack.push((newState,actions+[action]))
+                visited.add(newState)
 
     return None
 
@@ -134,11 +136,13 @@ def uniformCostSearch(problem):
         state,actions=fringe.pop()
         if problem.isGoalState(state):
             return actions
-        visited.add(state)
-        for newState,action,cost in problem.getSuccessors(state):
-            if newState not in visited:
-                fringe.push((newState,actions+[action]),
-                        cost+problem.getCostOfActions(actions))
+        if state not in visited:
+            for newState,action,cost in problem.getSuccessors(state):
+                if newState not in visited:
+                    visited.add(newState)
+                    fringe.push((newState,actions+[action]),
+                            cost+problem.getCostOfActions(actions))
+    return None
 
 def nullHeuristic(state, problem=None):
     """
@@ -153,19 +157,22 @@ def aStarSearch(problem, heuristic=nullHeuristic):
     visited=set()
     fringe=util.PriorityQueue()
     actions=[]
+
     fringe.push((problem.getStartState(),actions),0)
 
     while not fringe.isEmpty():
         state,actions=fringe.pop()
         if problem.isGoalState(state):
             return actions
-        visited.add(state)
-        for newState,action,cost in problem.getSuccessors(state):
-            if newState not in visited:
-                fringe.push((newState,actions+[action]),
-                            cost+
-                            problem.getCostOfActions(actions)+
-                            heuristic(newState,problem))
+
+        if state not in visited:
+            visited.add(state)
+            for newState,action,cost in problem.getSuccessors(state):
+                if newState not in visited:
+                    fringe.push((newState,actions+[action]),
+                                cost+
+                                problem.getCostOfActions(actions)+
+                                heuristic(newState,problem))
 
 
 # Abbreviations
