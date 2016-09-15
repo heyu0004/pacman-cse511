@@ -386,14 +386,13 @@ def cornersHeuristic(state, problem):
 
     "*** YOUR CODE HERE ***"
     pos,foods=state
-    distances=[0]
+    hfood=[50 for food in foods if not food]
     for i in range(4):
         if not foods[i]:
-            distances+=[max(((corners[i][0]-pos[0])**2+
-                    (corners[i][1]-pos[1])**2)**0.5,abs(corners[i][0]-pos[0])+
-                    abs(corners[i][1]-pos[1]))]
+            heuristic=abs(corners[i][0]-pos[0])+abs(corners[i][1]-pos[1])+sum(hfood)
+            return heuristic
 
-    return max(distances)
+    return 0
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
@@ -588,18 +587,86 @@ class AnyFoodSearchProblem(PositionSearchProblem):
 ##################
 
 class ApproximateSearchAgent(Agent):
-    def registerInitialState(self, gameState):
-        self.actions = []
+    "Implement your contest entry here.  Change anything but the class name."
 
+    def registerInitialState(self, state):
+        "This method is called before any moves are made."
+        self.actions = []
+        currentState = state
+        self.walls = state.getWalls()
+        self.startingPosition = state.getPacmanPosition()
+
+        while(currentState.getFood().count()>0):
+            nextPathSegment = self.findPathToClosestDot(currentState)  # The missing piece
+            Index=0
+            foundfoodflg=False
+            for action in nextPathSegment:
+                legal = currentState.getLegalActions()
+                if action not in legal:
+                    t = (str(action), str(currentState))
+                    raise Exception, 'findPathToClosestDot returned an illegal move: %s!\n%s' % t
+                x,y=currentState.getPacmanPosition()
+                dx,dy=Actions.directionToVector(action)
+                nextx,nexty = int(x+dx),int(y+dy)
+                food=currentState.getFood();
+                if food[nextx][nexty]:
+                    currentState = currentState.generateSuccessor(0, action)
+                    self.actions+=nextPathSegment[:Index+1]
+                    foundfoodflg=True
+                    break
+                if foundfoodflg:
+                    print "wrong"
+                    sys.exit()
+                currentState = currentState.generateSuccessor(0, action)
+                Index+=1
+            else:
+                self.actions+=nextPathSegment
+
+        self.actionIndex = 0
+        print 'Path found with cost %d.' % len(self.actions)
+
+    def findPathToClosestDot(self, gameState):
+        startPosition = gameState.getPacmanPosition()
+        food = gameState.getFood()
         walls = gameState.getWalls()
         problem = MyFoodSearchProblem(gameState)
 
-        self.actions= search.uniformCostSearch(problem)
-        self.actionIndex = 0
+        posX,posY=startPosition
+        foundflg=False
+        mazeM=[]
 
-        print 'Path found with cost %d.' % len(self.actions)
+        for r in range(max(food.width-1,food.height-1)):
+            foundfoodflg=False
+            for i in range(2*r):
+                for j in range(2*r):
+                    posX,posY=startPosition
+                    posX+=i-r
+                    posY+=j-r
+                    if posX<1:
+                        posX=1
+                    if posX>=food.width:
+                        posX=food.width-1
+                    if posY<1:
+                        posY=1
+                    if posY>=food.height:
+                        posY=food.height-1
+                    if r<3:
+                        if food[posX][posY]==True:
+                            problem.goal=(posX,posY)
+                            return search.aStarSearch(problem,MyHeuristic)
+                    else:
+                        if food[posX][posY]==True:
+                            mazeM.append((mazeDistance((startPosition),(posX,posY),gameState),(posX,posY)))
+                            foundfoodflg=True
+            if foundfoodflg:
+                value,pos=min(mazeM)
+                problem.goal=pos
+                return search.aStarSearch(problem,MyHeuristic)
+
+        return  None
 
     def getAction(self, state):
+        if 'actionIndex' not in dir(self): self.actionIndex = 0
         i = self.actionIndex
         self.actionIndex += 1
         if i < len(self.actions):
@@ -608,29 +675,75 @@ class ApproximateSearchAgent(Agent):
             return Directions.STOP
 
 class MyFoodSearchProblem(PositionSearchProblem):
+
     def __init__(self, gameState):
+        # Store the food for later reference
+        self.food = gameState.getFood()
+
+        # Store info for the PositionSearchProblem (no need to change this)
         self.walls = gameState.getWalls()
-        self.foods=gameState.getFood().asList()
         self.startState = gameState.getPacmanPosition()
         self.costFn = lambda x: 1
+        self._visited, self._visitedlist, self._expanded = {}, [], 0
 
     def isGoalState(self, state):
-        if state in self.foods
+        x, y = state
+
+        isGoal = state ==self.goal
+        if isGoal:
             return True
         else:
             return False
 
-    def getSuccessors(self, state):
-        successors = []
-        for action in [Directions.SOUTH, Directions.NORTH, Directions.WEST,Directions.EAST ]:
-            x,y = state
-            dx, dy = Actions.directionToVector(action)
-            nextx, nexty = int(x + dx), int(y + dy)
-            if not self.walls[nextx][nexty]:
-                nextState = (nextx, nexty)
-                cost = self.costFn(nextState)
-                successors.append( ( nextState, action, cost) )
-        return successors
+def MyHeuristic(state,problem):
+    if problem.food[state[0]][state[1]]:
+        return 0
+    else:
+        return 1
+#class ApproximateSearchAgent(Agent):
+#    def registerInitialState(self, gameState):
+#        self.actions = []
+#
+#        walls = gameState.getWalls()
+#        problem = MyFoodSearchProblem(gameState)
+#
+#        self.actions= search.uniformCostSearch(problem)
+#        self.actionIndex = 0
+#
+#        print 'Path found with cost %d.' % len(self.actions)
+#
+#    def getAction(self, state):
+#        i = self.actionIndex
+#        self.actionIndex += 1
+#        if i < len(self.actions):
+#            return self.actions[i]
+#        else:
+#            return Directions.STOP
+#
+#class MyFoodSearchProblem(PositionSearchProblem):
+#    def __init__(self, gameState):
+#        self.walls = gameState.getWalls()
+#        self.foods=gameState.getFood().asList()
+#        self.startState = gameState.getPacmanPosition()
+#        self.costFn = lambda x: 1
+#
+#    def isGoalState(self, state):
+#        if state in self.foods
+#            return True
+#        else:
+#            return False
+#
+#    def getSuccessors(self, state):
+#        successors = []
+#        for action in [Directions.SOUTH, Directions.NORTH, Directions.WEST,Directions.EAST ]:
+#            x,y = state
+#            dx, dy = Actions.directionToVector(action)
+#            nextx, nexty = int(x + dx), int(y + dy)
+#            if not self.walls[nextx][nexty]:
+#                nextState = (nextx, nexty)
+#                cost = self.costFn(nextState)
+#                successors.append( ( nextState, action, cost) )
+#        return successors
 
 def mazeDistance(point1, point2, gameState):
     """
