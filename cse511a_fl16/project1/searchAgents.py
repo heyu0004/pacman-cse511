@@ -340,9 +340,6 @@ class CornersProblem(search.SearchProblem):
                 if newPos in self.corners:
                     index=self.foods_id[newPos]
                     if not foods[index]:
-                        #foods=list(foods)
-                        #foods[self.foods_id[newPos]]=True;
-                        #foods=tuple(foods)
                         foods=foods[:index]+(True,)+foods[index+1:]
                 nextState=(newPos,foods)
                 successors+=[(nextState,action,1)]
@@ -386,13 +383,16 @@ def cornersHeuristic(state, problem):
 
     "*** YOUR CODE HERE ***"
     pos,foods=state
-    hfood=[50 for food in foods if not food]
+    tmppos=pos
+    heuristic=0
+
     for i in range(4):
         if not foods[i]:
-            heuristic=abs(corners[i][0]-pos[0])+abs(corners[i][1]-pos[1])+sum(hfood)
-            return heuristic
+            heuristic+=abs(corners[i][0]-tmppos[0])+abs(corners[i][1]-tmppos[1])
+            #heuristic+=(((corners[i][0]-tmppos[0])**2+(corners[i][1]-tmppos[1])**2)**0.5)
+            tmppos=corners[i]
 
-    return 0
+    return heuristic
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
