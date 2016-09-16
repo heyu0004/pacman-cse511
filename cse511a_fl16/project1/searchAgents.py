@@ -278,6 +278,9 @@ class CornersProblem(search.SearchProblem):
         self._expanded = 0 # Number of search nodes expanded
 
         "*** YOUR CODE HERE ***"
+        self.corners=list(self.corners)
+        self.corners[0],self.corners[1]=self.corners[1],self.corners[0]
+
         self.foods_id=dict()
         foods=[]
         cntFood=0
@@ -383,16 +386,22 @@ def cornersHeuristic(state, problem):
 
     "*** YOUR CODE HERE ***"
     pos,foods=state
-    tmppos=pos
     heuristic=0
+    leftFood=[corners[i] for i in range(len(corners)) if not foods[i]]
 
-    for i in range(4):
-        if not foods[i]:
-            heuristic+=abs(corners[i][0]-tmppos[0])+abs(corners[i][1]-tmppos[1])
-            #heuristic+=(((corners[i][0]-tmppos[0])**2+(corners[i][1]-tmppos[1])**2)**0.5)
-            tmppos=corners[i]
+    while len(leftFood)>0:
+        distances=[]
+        for food in leftFood:
+                #distances=[(((corners[i][0]-pos[0])**2+(corners[i][1]-pos[1])**2)**0.5,i)]
+                distances+=[(util.manhattanDistance(pos,food),food)]
+
+        minDistance,food=min(distances)
+        heuristic+=minDistance
+        pos=food
+        leftFood.remove(food)
 
     return heuristic
+
 
 class AStarCornersAgent(SearchAgent):
     "A SearchAgent for FoodSearchProblem using A* and your foodHeuristic"
